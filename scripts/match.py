@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 import numpy as np
 from transformers import CLIPProcessor, CLIPModel
+from PIL import Image
 
 ROOT = Path(__file__).resolve().parent.parent
 EMBEDDINGS_DIR = ROOT / "embeddings"
@@ -34,6 +35,12 @@ def match(query, top_k=5):
     # sort and return top matches
     results.sort(key=lambda x: x[1], reverse=True)
     return results[:top_k]
+
+def show_matches(matches):
+    for img_name, score in matches:
+        print(f"{img_name}: {score:.3f}")
+        img = Image.open(f"./images/{img_name}")
+        img.show()
 
 if __name__ == "__main__":
     while True:

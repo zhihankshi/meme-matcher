@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meme Matcher</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .search-box {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+        
+        input {
+            flex: 1;
+            padding: 15px;
+            font-size: 16px;
+            border: none;
+            border-radius: 8px;
+            background: #333;
+            color: #fff;
+        }
+        
+        input::placeholder {
+            color: #888;
+        }
+        
+        button {
+            padding: 15px 30px;
+            font-size: 16px;
+            border: none;
+            border-radius: 8px;
+            background: #646cff;
+            color: #fff;
+            cursor: pointer;
+        }
+        
+        button:hover {
+            background: #535bf2;
+        }
+        
+        .results {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        
+        .result-card {
+            background: #333;
+            border-radius: 8px;
+            padding: 10px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .result-card:hover {
+            transform: scale(1.03);
+        }
+        
+        .result-card img {
+            width: 100%;
+            border-radius: 4px;
+        }
+        
+        .score {
+            text-align: center;
+            margin-top: 8px;
+            color: #888;
+            font-size: 14px;
+        }
+        
+        .copied {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #646cff;
+            padding: 10px 20px;
+            border-radius: 8px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔥 Meme Matcher</h1>
+    
+    <div class="search-box">
+        <input type="text" id="query" placeholder="What do you want to say?" />
+        <button onclick="search()">Match</button>
+    </div>
+    
+    <div class="results" id="results"></div>
+    
+    <div class="copied" id="copied">Copied to clipboard!</div>
+
+    <script>
+        const input = document.getElementById("query");
+        const resultsDiv = document.getElementById("results");
+        const copiedDiv = document.getElementById("copied");
+        
+        input.addEventListener("keypress", (e) => {
+            if (e.key === "Enter") search();
+        });
+        
+        async function search() {
+            const query = input.value.trim();
+            if (!query) return;
+            
+            const res = await fetch("/match", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ text: query })
+            });
+            
+            const matches = await res.json();
+            
+            resultsDiv.innerHTML = matches.map(m => `
+                <div class="result-card" onclick="copyImage('${m.image}')">
+                    <img src="/images/${m.image}" alt="${m.image}" />
+                    <div class="score">${(m.score * 100).toFixed(1)}%</div>
+                </div>
+            `).join("");
+        }
+        
+        async function copyImage(imageName) {
+            try {
+                const res = await fetch(`/images/${imageName}`);
+                const blob = await res.blob();
+                await navigator.clipboard.write([
+                    new ClipboardItem({ [blob.type]: blob })
+                ]);
+                
+                copiedDiv.style.display = "block";
+                setTimeout(() => copiedDiv.style.display = "none", 2000);
+            } catch (err) {
+                console.error("Copy failed:", err);
+            }
+        }
+    </script>
+</body>
+</html>
